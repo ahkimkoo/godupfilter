@@ -24,7 +24,7 @@ func init() {
 func worker(no int) {
 	for shnw := range task {
 		log.Printf("no.%d get task", no)
-		for i := 0; i < 100000/4; i++ {
+		for i := 0; i < 100000/numThreads; i++ {
 			shingle.Similarity(shex, shnw)
 		}
 	}
