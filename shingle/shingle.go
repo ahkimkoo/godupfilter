@@ -13,9 +13,11 @@ func init() {
 	segmenter.LoadDictionary("src/github.com/huichen/sego/data/dictionary.txt")
 }
 
-func Shingling(text []byte, shingle_size int) map[uint32]bool {
+func Shingling(text []byte, shingle_size int, limit int) map[uint32]bool {
 	segments := segmenter.Segment(text)
-	tokens := make(map[uint32]bool)
+	tokens := make(map[uint32]int)
+	final_token := make(map[uint32]bool)
+	key_no := 0
 	for i := 0; i < len(segments)-shingle_size; i++ {
 		sub_segments := segments[i : i+shingle_size]
 		var s []string
@@ -30,10 +32,20 @@ func Shingling(text []byte, shingle_size int) map[uint32]bool {
 		// fmt.Printf("%v===>%v\n", token, hash)
 		_, ok := tokens[hash]
 		if !ok {
-			tokens[hash] = true
+			tokens[hash] = key_no
+			key_no++
 		}
 	}
-	return tokens
+	md := 1
+	if limit > 0 {
+		md = len(tokens) / limit
+	}
+	for k, v := range tokens {
+		if v%md == 0 {
+			final_token[k] = true
+		}
+	}
+	return final_token
 }
 
 func Similarity(a, b map[uint32]bool) float32 {
@@ -52,6 +64,6 @@ func Similarity(a, b map[uint32]bool) float32 {
 			same_count++
 		}
 	}
-	// fmt.Printf("diffenece: %d, same:%d", (len(a) + len(b) - same_count), same_count)
+	// fmt.Printf("\ndiffenece: %d, same:%d\n", (len(a) + len(b) - same_count), same_count)
 	return float32(same_count) / float32(len(a)+len(b)-same_count)
 }
