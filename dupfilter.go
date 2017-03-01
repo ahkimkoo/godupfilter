@@ -12,7 +12,7 @@ import (
 var (
 	numThreads = runtime.NumCPU()
 	task       = make(chan map[uint32]bool, numThreads)
-	done       = make(chan bool, numThreads)
+	done       = make(chan int, numThreads)
 	numRuns    = numThreads
 	shex       map[uint32]bool
 	totalTimes = 100000
@@ -23,14 +23,28 @@ func init() {
 	shex = shingle.Shingling(sx, 3, 0)
 }
 
-func worker(no int) {
-	for shnw := range task {
-		// log.Printf("no.%d get task", no)
-		for i := 0; i < totalTimes/numRuns; i++ {
-			shingle.Similarity(shex, shnw)
-		}
+func worker(no int, shnw map[uint32]bool) {
+	for i := 0; i < totalTimes/numRuns; i++ {
+		shingle.Similarity(shex, shnw)
 	}
-	done <- true
+	done <- no
+}
+
+func test(shg1 map[uint32]bool) {
+	log.Printf("Start work")
+	t0 := time.Now()
+
+	for i := 0; i < numThreads; i++ {
+		go worker(i, shg1)
+	}
+
+	for i := 0; i < numThreads; i++ {
+		<-done
+		// log.Printf("no.%v finish", <-done)
+	}
+
+	t1 := time.Now()
+	log.Printf("finish, cost: %v", t1.Sub(t0))
 }
 
 func main() {
@@ -57,23 +71,7 @@ func main() {
 	distance := shingle.Similarity(shg1, shg2)
 	log.Printf("%f\n", distance)
 
-	for i := 0; i < numThreads; i++ {
-		go worker(i)
+	for i := 0; i < 10; i++ {
+		test(shg1)
 	}
-
-	log.Printf("Start work")
-
-	t0 := time.Now()
-
-	for i := 0; i < numRuns; i++ {
-		task <- shg1
-	}
-	close(task)
-
-	for i := 0; i < numThreads; i++ {
-		<-done
-	}
-
-	t1 := time.Now()
-	log.Printf("finish, cost: %v", t1.Sub(t0))
 }
