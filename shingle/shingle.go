@@ -38,6 +38,7 @@ func Shingling(text []byte, shingle_size int, limit int) map[uint32]bool {
 	}
 	md := 1
 	if limit > 0 {
+		//如果有数量限制，那么其中任选几个，每隔几个选一个，例如：60个特征只要30个，每隔2个选一个
 		md = len(tokens) / limit
 	}
 	for k, v := range tokens {
